@@ -1,0 +1,44 @@
+openapi: "3.0.0"
+info:
+  title: Bolota Agent API
+  version: "1.0.0"
+paths:
+  /medications:
+    get:
+      summary: Search medications
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /pubmed:
+    get:
+      summary: Search pubmed articles
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /webhook/bolota:
+    post:
+      summary: Webhook for Bolota
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: OK
