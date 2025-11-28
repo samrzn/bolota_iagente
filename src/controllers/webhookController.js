@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const bolota = require('../agent/bolotaAgent.js');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 const bodySchema = Joi.object({
   sessionId: Joi.string().allow(null, ''),

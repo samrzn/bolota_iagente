@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const csv = require('csv-parser');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 function parseCSV(filePath) {
   return new Promise((resolve, reject) => {

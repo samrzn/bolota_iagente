@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const MedicationService = require('../services/medicationService.js');
 const MedicationRepository = require('../../../repositories/medications/medicationRepository.js');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 const querySchema = Joi.object({
   query: Joi.string().trim().min(1).required()

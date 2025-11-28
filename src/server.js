@@ -1,5 +1,5 @@
 require('dotenv').config();
-const loggerInfo = require('./infra/loggerInfo.js');
+const loggerInfo = require('./infra/logger.js');
 const connect = require('./database/connect.js');
 const app = require('./app.js');
 

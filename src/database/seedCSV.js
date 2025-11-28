@@ -1,13 +1,9 @@
-/**
- * Seed script: reads CSV and writes normalized documents to MongoDB.
- * Usage: NODE_ENV=development npm run seed
- */
-require('dotenv').config();
-const path = require('node:path');
-const parseCSV = require('../utils/csvParser.js');
-const connect = require('./connect.js');
-const MedicationRepository = require('../repositories/medications/medicationRepository.js');
-const loggerInfo = require('../infra/loggerInfo.js');
+import 'dotenv/config';
+import path from 'node:path';
+import parseCSV from '../utils/csvParser.js';
+import connect from './connect.js';
+import MedicationRepository from '../repositories/medications/medicationRepository.js';
+import loggerInfo from '../infra/logger.js';
 
 const csvPath = process.env.CSV_PATH;
 
@@ -21,21 +17,22 @@ async function seed() {
   loggerInfo.info('Clearing medications collection...');
   await repo.deleteAll();
 
-  const docs = rows.map((r) => ({
-    code: (r.id || r.code || '').toString(),
-    description: (r.descricao || r.description || '').trim(),
-    price: Number(r.preco || r.price || 0),
-    stock: Number(r.estoque || r.stock || 0)
+  const docs = rows.map((row) => ({
+    code: String(row.id || row.code || ''),
+    description: String(row.descricao || row.description || '').trim(),
+    price: Number(row.preco || row.price || 0),
+    stock: Number(row.estoque || row.stock || 0)
   }));
 
   await repo.insertMany(docs);
-  loggerInfo.info('Seed completed: %d records', docs.length);
+
+  loggerInfo.info(`Seed completed: ${docs.length} records inserted`);
 }
 
 try {
   await seed();
   process.exit(0);
 } catch (err) {
-  loggerInfo.error('Seed failed: %s', err.message);
+  loggerInfo.error(`Seed failed: ${err.message}`);
   process.exit(1);
 }

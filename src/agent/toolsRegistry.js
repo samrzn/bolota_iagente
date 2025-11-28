@@ -1,5 +1,5 @@
 const axios = require('axios');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 class ToolsRegistry {
   constructor({ pubmedUrl, medsUrl, timeout = 5000 }) {

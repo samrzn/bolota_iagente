@@ -1,4 +1,4 @@
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 function errorHandler(err, req, res, next) {
   loggerInfo.error('UnhandledError: %s', err.stack || err.message);

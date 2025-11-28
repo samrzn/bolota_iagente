@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 const connect = async (uri) => {
   try {

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const loggerInfo = require('../infra/loggerInfo.js');
+const loggerInfo = require('../infra/logger.js');
 
 class PubMedService {
   constructor(baseUrl) {
