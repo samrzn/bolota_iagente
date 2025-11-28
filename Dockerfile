@@ -1,12 +1,6 @@
-FROM node:22-slim AS deps
+FROM node:22-alpine AS deps
 
 WORKDIR /usr/src/app
-
-RUN apt-get update && apt-get install -y \
-    g++ \
-    make \
-    python3 \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 
@@ -14,7 +8,7 @@ RUN npm ci --omit=dev
 
 ###############################################
 
-FROM node:22-slim AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -23,7 +17,7 @@ COPY . .
 
 ###############################################
 
-FROM node:22-slim AS production
+FROM node:22-alpine AS production
 
 WORKDIR /usr/src/app
 

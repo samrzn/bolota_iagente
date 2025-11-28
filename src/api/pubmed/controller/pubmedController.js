@@ -1,6 +1,6 @@
-const Joi = require('joi');
-const PubMedService = require('../service/pubmedService.js');
-const loggerInfo = require('../infra/logger.js');
+import Joi from 'joi';
+import PubMedService from '../service/pubmedService.js';
+import loggerHelper from '../../../infra/logger.js';
 
 const querySchema = Joi.object({
   query: Joi.string().trim().min(1).required()
@@ -8,15 +8,13 @@ const querySchema = Joi.object({
 
 const service = new PubMedService(process.env.PUBMED_URL);
 
-async function search(req, res, next) {
+export async function searchPubMed(req, res, next) {
   try {
     await querySchema.validateAsync(req.query);
     const results = await service.search(req.query.query);
     return res.status(200).json({ items: results });
   } catch (err) {
-    loggerInfo.error('PubMedController.search error: %s', err.message);
-    next(err);
+    loggerHelper.error('PubMedController.searchPubMed error: %s', err.message);
+    return next(err);
   }
 }
-
-module.exports = { search };

@@ -1,17 +1,14 @@
-const mongoose = require('mongoose');
-const loggerInfo = require('../infra/logger.js');
+import mongoose from 'mongoose';
+import loggerHelper from '../infra/logger.js';
 
-const connect = async (uri) => {
+const dbConnection = async (uri) => {
   try {
-    await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    loggerInfo.info('Connected to MongoDB');
+    await mongoose.connect(uri, {});
+    loggerHelper.info('Connected to MongoDB');
   } catch (error) {
-    loggerInfo.error('MongoDB connection error: %s', error.message);
+    loggerHelper.error('MongoDB connection error: %s', error.message);
     throw error;
   }
 };
 
-module.exports = connect;
+export default dbConnection;

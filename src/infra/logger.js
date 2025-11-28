@@ -1,6 +1,6 @@
-const { createLogger, format, transports } = require('winston');
+import { createLogger, format, transports } from 'winston';
 
-const loggerInfo = createLogger({
+const loggerHelper = createLogger({
   level: process.env.LOG_LEVEL,
   format: format.combine(
     format.timestamp(),
@@ -11,4 +11,4 @@ const loggerInfo = createLogger({
   transports: [new transports.Console()]
 });
 
-module.exports = loggerInfo;
+export default loggerHelper;

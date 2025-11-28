@@ -1,12 +1,12 @@
-const fs = require('node:fs');
-const csv = require('csv-parser');
-const loggerInfo = require('../infra/logger.js');
+import fs from 'node:fs';
+import csv from 'csv-parser';
+import loggerHelper from '../infra/logger.js';
 
-function parseCSV(filePath) {
+export default function parseCSV(filePath) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(filePath)) {
       const err = new Error(`CSV file not found at ${filePath}`);
-      loggerInfo.error(err.message);
+      loggerHelper.error(err.message);
       return reject(err);
     }
     const rows = [];
@@ -17,5 +17,3 @@ function parseCSV(filePath) {
       .on('error', (err) => reject(err));
   });
 }
-
-module.exports = parseCSV;

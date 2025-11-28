@@ -1,38 +1,49 @@
 import 'dotenv/config';
 import path from 'node:path';
 import parseCSV from '../utils/csvParser.js';
-import connect from './connect.js';
+import dbConnection from './connect.js';
 import MedicationRepository from '../repositories/medications/medicationRepository.js';
-import loggerInfo from '../infra/logger.js';
+import loggerHelper from '../infra/logger.js';
 
-const csvPath = process.env.CSV_PATH;
+const csvPath =
+  process.env.CSV_PATH ?? path.resolve(process.cwd(), 'dados_produtos.csv');
+const mongoUri = process.env.MONGO_URI;
 
-async function seed() {
-  const mongoUri = process.env.MONGO_URI;
-  await connect(mongoUri);
-
-  const rows = await parseCSV(csvPath);
-  const repo = new MedicationRepository();
-
-  loggerInfo.info('Clearing medications collection...');
-  await repo.deleteAll();
-
-  const docs = rows.map((row) => ({
-    code: String(row.id || row.code || ''),
-    description: String(row.descricao || row.description || '').trim(),
-    price: Number(row.preco || row.price || 0),
-    stock: Number(row.estoque || row.stock || 0)
-  }));
-
-  await repo.insertMany(docs);
-
-  loggerInfo.info(`Seed completed: ${docs.length} records inserted`);
+function normalizeRow(r = {}) {
+  return {
+    code: String(r.id ?? r.code ?? '').trim(),
+    description: String(r.descricao ?? r.description ?? '').trim(),
+    price: Number(r.preco ?? r.price ?? 0),
+    stock: Number(r.estoque ?? r.stock ?? 0)
+  };
 }
 
 try {
-  await seed();
+  await dbConnection(mongoUri);
+  loggerHelper.info('Parsing CSV at %s', csvPath);
+
+  const rows = await parseCSV(csvPath);
+  if (!rows || rows.length === 0) {
+    loggerHelper.warn('No rows found in CSV: %s', csvPath);
+    process.exit(0);
+  }
+
+  const repo = new MedicationRepository();
+  loggerHelper.info('Clearing medications collection...');
+  await repo.deleteAll();
+
+  const docs = rows
+    .map(normalizeRow)
+    .filter((d) => d.description && !Number.isNaN(d.price));
+  if (docs.length === 0) {
+    loggerHelper.warn('No valid docs to insert after normalization.');
+    process.exit(0);
+  }
+
+  await repo.insertMany(docs);
+  loggerHelper.info('Seed completed: %d records inserted', docs.length);
   process.exit(0);
 } catch (err) {
-  loggerInfo.error(`Seed failed: ${err.message}`);
+  loggerHelper.error('Seed failed: %s', err?.message ?? String(err));
   process.exit(1);
 }

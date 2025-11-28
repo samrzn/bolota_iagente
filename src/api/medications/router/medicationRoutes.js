@@ -1,8 +1,7 @@
-const express = require('express');
-const MedicationController = require('../controller/medicationController.js');
+import { Router } from 'express';
+import { searchMedication } from '../controller/medicationController.js';
 
-const router = express.Router();
+const medicationRouter = Router();
+medicationRouter.get('/', searchMedication);
 
-router.get('/', MedicationController.search);
-
-module.exports = router;
+export default medicationRouter;

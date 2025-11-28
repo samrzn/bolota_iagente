@@ -1,21 +1,25 @@
-const axios = require('axios');
-const loggerInfo = require('../infra/logger.js');
+import axios from 'axios';
+import loggerHelper from '../../../infra/logger.js';
 
-class PubMedService {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl || process.env.PUBMED_URL;
+export default class PubMedService {
+  constructor(baseUrl = process.env.PUBMED_URL) {
+    this.baseUrl = baseUrl;
+    this.client = axios.create({ timeout: 5000 });
   }
 
   async search(term, maxResults = 3) {
     if (!term) return [];
     try {
-      const esearch = `${this.baseUrl}/esearch.fcgi?db=pubmed&retmode=json&retmax=${maxResults}&term=${encodeURIComponent(term)}`;
-      const sRes = await axios.get(esearch);
+      const esearch = `${this.baseUrl}/esearch.fcgi`;
+      const sRes = await this.client.get(esearch, {
+        params: { db: 'pubmed', retmode: 'json', retmax: maxResults, term }
+      });
       const ids = sRes.data?.esearchresult?.idlist || [];
       if (!ids.length) return [];
-
-      const summary = `${this.baseUrl}/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(',')}`;
-      const sumRes = await axios.get(summary);
+      const summary = `${this.baseUrl}/esummary.fcgi`;
+      const sumRes = await this.client.get(summary, {
+        params: { db: 'pubmed', retmode: 'json', id: ids.join(',') }
+      });
       const result = sumRes.data?.result || {};
       return ids.map((id) => {
         const item = result[id] || {};
@@ -29,10 +33,8 @@ class PubMedService {
         };
       });
     } catch (err) {
-      loggerInfo.error('PubMedService.search error: %s', err.message);
+      loggerHelper.warn('PubMedService.search failed: %s', err.message);
       return [];
     }
   }
 }
-
-module.exports = PubMedService;

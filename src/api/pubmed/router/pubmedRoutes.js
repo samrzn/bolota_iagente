@@ -1,8 +1,7 @@
-const express = require('express');
-const PubMedController = require('../controller/pubmedController.js');
+import { Router } from 'express';
+import { searchPubMed } from '../controller/pubmedController.js';
 
-const router = express.Router();
+const pubmedRouter = Router();
+pubmedRouter.get('/', searchPubMed);
 
-router.get('/', PubMedController.search);
-
-module.exports = router;
+export default pubmedRouter;

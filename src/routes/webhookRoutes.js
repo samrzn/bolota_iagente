@@ -1,8 +1,7 @@
-const express = require('express');
-const webhookController = require('../controllers/webhookController.js');
+import { Router } from 'express';
+import { handleWebhook } from '../controllers/webhookController.js';
 
-const router = express.Router();
+const webhookRouter = Router();
+webhookRouter.post('/bolota', handleWebhook);
 
-router.post('/bolota', webhookController.handleWebhook);
-
-module.exports = router;
+export default webhookRouter;

@@ -1,12 +1,10 @@
-const intentDetector = require('./intentDetector.js');
-const stateManager = require('./stateManager.js');
-const tools = require('./toolsRegistry.js');
+import intentDetector from './intentDetector.js';
+import stateManager from './stateManager.js';
+import toolsRegistry from './toolsRegistry.js';
 
 class BolotaAgent {
   async handle(sessionId, message) {
     const intent = intentDetector.detect(message);
-    //const session = stateManager.get(sessionId);
-
     switch (intent) {
       case 'MEDICINE_INFO':
         return this._handleMedicineInfo(sessionId, message);
@@ -29,7 +27,7 @@ class BolotaAgent {
       step: 'awaiting_confirmation'
     });
 
-    const articles = await tools.findArticles(med);
+    const articles = await toolsRegistry.findArticles(med);
     const summary = articles.length
       ? articles.map((a) => `- ${a.title} (${a.pubdate})`).join('\n')
       : 'Nenhum estudo encontrado.';
@@ -40,15 +38,15 @@ class BolotaAgent {
   async _handleCheckAvailability(sessionId, message) {
     const session = stateManager.get(sessionId);
     const med = session.lastMedication || (message || '').trim();
-    if (!med) {
+    if (!med)
       return {
         text: 'Qual medicamento você deseja consultar (ex: Amoxicilina)?'
       };
-    }
-    const items = await tools.findMedication(med);
-    if (!items || items.length === 0) {
+
+    const items = await toolsRegistry.findMedication(med);
+    if (!items || items.length === 0)
       return { text: `Não encontrei ${med} no inventário local.` };
-    }
+
     const item = items[0];
     const text = `Produto: ${item.description}\nPreço: R$ ${item.price}\nEstoque: ${item.stock}\n⚠️ Uso somente com prescrição veterinária.`;
     return { text, item };
@@ -56,19 +54,19 @@ class BolotaAgent {
 
   async _handleConfirm(sessionId) {
     const session = stateManager.get(sessionId);
-    if (!session.lastMedication) {
+    if (!session.lastMedication)
       return { text: 'Sobre qual medicamento você quer a confirmação?' };
-    }
-    const items = await tools.findMedication(session.lastMedication);
-    if (!items || items.length === 0) {
+
+    const items = await toolsRegistry.findMedication(session.lastMedication);
+    if (!items || items.length === 0)
       return {
         text: `Não encontrei ${session.lastMedication} no inventário local.`
       };
-    }
+
     const item = items[0];
     const text = `Produto: ${item.description}\nPreço: R$ ${item.price}\nEstoque: ${item.stock}\n⚠️ Uso somente com prescrição veterinária.`;
     return { text, item };
   }
 }
 
-module.exports = new BolotaAgent();
+export default new BolotaAgent();

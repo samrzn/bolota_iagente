@@ -1,14 +1,13 @@
-const express = require('express');
-const cors = require('cors');
-const yaml = require('yamljs');
-const swaggerUi = require('swagger-ui-express');
-const medicationRoutes = require('./api/medications/router/medicationRoutes.js');
-const pubmedRoutes = require('./api/pubmed/router/pubmedRoutes.js');
-const webhookRoutes = require('./routes/webhookRoutes.js');
-const errorHandler = require('./middlewares/errorHandler.js');
+import express from 'express';
+import cors from 'cors';
+import yaml from 'yamljs';
+import swaggerUi from 'swagger-ui-express';
+import medicationRoutes from './api/medications/router/medicationRoutes.js';
+import pubmedRoutes from './api/pubmed/router/pubmedRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
+import errorHandler from './middlewares/errorMiddleware.js';
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -22,15 +21,12 @@ try {
   );
 }
 
-// routes
 app.use('/medications', medicationRoutes);
 app.use('/pubmed', pubmedRoutes);
 app.use('/webhook', webhookRoutes);
 
-// health
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// error handler
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

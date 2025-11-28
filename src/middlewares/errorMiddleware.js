@@ -1,12 +1,7 @@
-const loggerInfo = require('../infra/logger.js');
+import loggerHelper from '../infra/logger.js';
 
-function errorHandler(err, req, res, next) {
-  loggerInfo.error('UnhandledError: %s', err.stack || err.message);
+export default function errorHandler(err, req, res, next) {
+  loggerHelper.error('UnhandledError: %s', err.stack || err.message);
   const status = err.status || 500;
-  const payload = {
-    error: err.message || 'Internal Server Error'
-  };
-  res.status(status).json(payload);
+  res.status(status).json({ error: err.message || 'Internal Server Error' });
 }
-
-module.exports = errorHandler;

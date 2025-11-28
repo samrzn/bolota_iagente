@@ -1,6 +1,6 @@
-const Medication = require('../../api/medications/model/medicationModel.js');
+import Medication from '../../api/medications/model/medicationModel.js';
 
-class MedicationRepository {
+export default class MedicationRepository {
   async findByCode(code) {
     if (!code) return null;
     return Medication.findOne({ code });
@@ -15,7 +15,6 @@ class MedicationRepository {
       .sort({ score: { $meta: 'textScore' } })
       .limit(limit);
     if (textResults?.length) return textResults;
-
     const regex = new RegExp(
       query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'),
       'i'
@@ -32,5 +31,3 @@ class MedicationRepository {
     return Medication.deleteMany({});
   }
 }
-
-module.exports = MedicationRepository;

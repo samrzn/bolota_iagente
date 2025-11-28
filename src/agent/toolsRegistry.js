@@ -1,8 +1,12 @@
-const axios = require('axios');
-const loggerInfo = require('../infra/logger.js');
+import axios from 'axios';
+import loggerHelper from '../infra/logger.js';
 
 class ToolsRegistry {
-  constructor({ pubmedUrl, medsUrl, timeout = 5000 }) {
+  constructor({
+    pubmedUrl = process.env.PUBMED_URL,
+    medsUrl = process.env.MEDS_URL,
+    timeout = 5000
+  } = {}) {
     this.pubmedUrl = pubmedUrl;
     this.medsUrl = medsUrl;
     this.client = axios.create({ timeout });
@@ -30,7 +34,7 @@ class ToolsRegistry {
         };
       });
     } catch (err) {
-      loggerInfo.warn('ToolsRegistry.findArticles failed: %s', err.message);
+      loggerHelper.warn('ToolsRegistry.findArticles failed: %s', err.message);
       return [];
     }
   }
@@ -42,15 +46,10 @@ class ToolsRegistry {
       });
       return res.data?.items || [];
     } catch (err) {
-      loggerInfo.warn('ToolsRegistry.findMedication failed: %s', err.message);
+      loggerHelper.warn('ToolsRegistry.findMedication failed: %s', err.message);
       return [];
     }
   }
 }
 
-const registry = new ToolsRegistry({
-  pubmedUrl: process.env.PUBMED_URL,
-  medsUrl: process.env.MEDS_URL
-});
-
-module.exports = registry;
+export default new ToolsRegistry();

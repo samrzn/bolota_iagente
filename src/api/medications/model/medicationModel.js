@@ -1,4 +1,6 @@
-const { Schema, model } = require('mongoose');
+import mongoose from 'mongoose';
+
+const { Schema, model } = mongoose;
 
 const MedicationSchema = new Schema(
   {
@@ -12,4 +14,4 @@ const MedicationSchema = new Schema(
 
 MedicationSchema.index({ description: 'text' });
 
-module.exports = model('Medication', MedicationSchema);
+export default model('Medication', MedicationSchema);

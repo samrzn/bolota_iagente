@@ -1,29 +1,6 @@
 version: '3.9'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: bolota_app
-    restart: always
-    env_file:
-      - .env
-    ports:
-      - '3000:3000'
-    depends_on:
-      mongo:
-        condition: service_healthy
-      seed:
-        condition: service_completed_successfully
-    networks:
-      - bolota-net
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
-      interval: 15s
-      timeout: 5s
-      retries: 5
-
   mongo:
     image: mongo:8
     container_name: bolota_mongo
@@ -34,8 +11,6 @@ services:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
-    networks:
-      - bolota-net
     healthcheck:
       test:
         [
@@ -48,10 +23,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - bolota-net
 
   seed:
     build:
       context: .
+      dockerfile: Dockerfile
     container_name: bolota_seed
     command: ['npm', 'run', 'seed']
     env_file:
@@ -63,10 +41,32 @@ services:
       - bolota-net
     restart: 'no'
 
-networks:
-  bolota-net:
-    driver: bridge
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bolota_app
+    env_file:
+      - .env
+    ports:
+      - '3000:3000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    networks:
+      - bolota-net
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: always
 
 volumes:
   mongo_data:
-    driver: local
+
+networks:
+  bolota-net:
+    driver: bridge

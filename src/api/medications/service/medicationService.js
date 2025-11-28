@@ -1,4 +1,4 @@
-class MedicationService {
+export default class MedicationService {
   /**
    * @param {MedicationRepository} repository
    */
@@ -8,10 +8,8 @@ class MedicationService {
 
   async find(query) {
     if (!query || typeof query !== 'string') return [];
-
     const codeMatch = await this.repository.findByCode(query);
     if (codeMatch) return [this._toDto(codeMatch)];
-
     const results = await this.repository.searchByText(query);
     return results.map(this._toDto);
   }
@@ -25,5 +23,3 @@ class MedicationService {
     };
   }
 }
-
-module.exports = MedicationService;
