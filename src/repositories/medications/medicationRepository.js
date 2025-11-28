@@ -1,0 +1,36 @@
+const Medication = require('../../api/medications/model/medicationModel.js');
+
+class MedicationRepository {
+  async findByCode(code) {
+    if (!code) return null;
+    return Medication.findOne({ code });
+  }
+
+  async searchByText(query, limit = 10) {
+    if (!query) return [];
+    const textResults = await Medication.find(
+      { $text: { $search: query } },
+      { score: { $meta: 'textScore' } }
+    )
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(limit);
+    if (textResults?.length) return textResults;
+
+    const regex = new RegExp(
+      query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'),
+      'i'
+    );
+    return Medication.find({ description: regex }).limit(limit);
+  }
+
+  async insertMany(docs) {
+    if (!Array.isArray(docs)) throw new TypeError('Docs must be an Array[].');
+    return Medication.insertMany(docs);
+  }
+
+  async deleteAll() {
+    return Medication.deleteMany({});
+  }
+}
+
+module.exports = MedicationRepository;

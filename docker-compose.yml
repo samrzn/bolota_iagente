@@ -1,24 +1,72 @@
-version: "3.8"
+version: '3.9'
+
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bolota_app
+    restart: always
+    env_file:
+      - .env
     ports:
-      - "3000:3000"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/bolota
-      - CSV_PATH=/data/dados_produtos.csv
-    volumes:
-      - ./:/usr/src/app
-      - ./dados_produtos.csv:/data/dados_produtos.csv:ro
+      - '3000:3000'
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    networks:
+      - bolota-net
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   mongo:
-    image: mongo:6.0
+    image: mongo:8
+    container_name: bolota_mongo
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: bolota_db
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
-      - mongo-data:/data/db
+      - mongo_data:/data/db
+    networks:
+      - bolota-net
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mongosh',
+          'mongodb://localhost:27017',
+          '--eval',
+          "db.adminCommand('ping')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  seed:
+    build:
+      context: .
+    container_name: bolota_seed
+    command: ['npm', 'run', 'seed']
+    env_file:
+      - .env
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - bolota-net
+    restart: 'no'
+
+networks:
+  bolota-net:
+    driver: bridge
 
 volumes:
-  mongo-data:
+  mongo_data:
+    driver: local

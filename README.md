@@ -6,7 +6,7 @@ Bolota is a modular agent that integrates PubMed and a local medications DB to a
 
 ## Requirements
 
-- Node 18+
+- Node 22+
 - Docker & docker-compose (optional)
 - CSV file: dados_produtos.csv
 
