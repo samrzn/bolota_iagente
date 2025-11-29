@@ -9,25 +9,58 @@ export class ToolsRegistry {
 
   async findArticles(query) {
     try {
+      loggerHelper.info('ToolsRegistry.findArticles called', {
+        query,
+        url: this.pubmedApiUrl
+      });
+
       const response = await axios.get(this.pubmedApiUrl, {
         params: { query }
       });
-      return response.data.items || [];
+
+      const items = response.data.items || [];
+
+      loggerHelper.info('ToolsRegistry.findArticles success', {
+        query,
+        count: items.length
+      });
+
+      return items;
     } catch (err) {
-      loggerHelper.error('Erro ao buscar artigos no PubMed', err);
+      loggerHelper.error('Erro ao buscar artigos', {
+        query,
+        url: this.pubmedApiUrl,
+        error: err.message || String(err)
+      });
       return [];
     }
   }
 
   async findMedication(query) {
     try {
-      const response = await axios.get(this.medsApiUrl, { params: { query } });
-      return response.data.items || [];
+      loggerHelper.info('ToolsRegistry.findMedication called', {
+        query,
+        url: this.medsApiUrl
+      });
+
+      const response = await axios.get(this.medsApiUrl, {
+        params: { query }
+      });
+
+      const items = response.data.items || [];
+
+      loggerHelper.info('ToolsRegistry.findMedication success', {
+        query,
+        count: items.length
+      });
+
+      return items;
     } catch (err) {
-      loggerHelper.error(
-        'Erro ao buscar medicamento na base de dados local',
-        err
-      );
+      loggerHelper.error('Erro ao buscar medicamento na base de dados local', {
+        query,
+        url: this.medsApiUrl,
+        error: err.message || String(err)
+      });
       return [];
     }
   }

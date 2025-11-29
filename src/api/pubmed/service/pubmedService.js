@@ -115,6 +115,11 @@ export class PubMedService {
   }
 
   async searchArticles(query, maxResults = 5) {
+    loggerHelper.info('PubMedService.searchArticles called', {
+      query,
+      maxResults
+    });
+
     const ids = await this.searchIds(query, maxResults);
     return this.fetchArticleDetails(ids);
   }

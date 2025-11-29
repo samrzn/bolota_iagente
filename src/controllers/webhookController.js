@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import bolotaAgent from '../agent/bolotaAgent.js';
+import loggerHelper from '../infra/logger.js';
 
 const bodySchema = Joi.object({
   sessionId: Joi.string().optional(),
@@ -15,6 +16,11 @@ export async function handleWebhook(req, res, next) {
     const { error, value } = bodySchema.validate(req.body);
 
     if (error) {
+      loggerHelper.warn('BolotaWebhook body inválido', {
+        body: req.body,
+        details: error.details?.map((d) => d.message)
+      });
+
       return res.status(400).json({
         message: 'Body inválido',
         details: error.details?.map((d) => d.message) || []
@@ -27,12 +33,24 @@ export async function handleWebhook(req, res, next) {
       sessionId = generateSessionId();
     }
 
+    loggerHelper.info('BolotaWebhook request', {
+      sessionId,
+      message
+    });
+
     const agentResponse = await bolotaAgent.handle(sessionId, message);
+
+    loggerHelper.info('BolotaWebhook response', {
+      sessionId,
+      intent: agentResponse.intent,
+      replySample: agentResponse.reply?.slice(0, 100)
+    });
 
     return res.status(200).json({
       sessionId,
       agent: 'Bolota',
-      reply: agentResponse.reply
+      reply: agentResponse.reply,
+      intent: agentResponse.intent
     });
   } catch (err) {
     next(err);

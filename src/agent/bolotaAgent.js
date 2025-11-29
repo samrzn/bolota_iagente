@@ -6,32 +6,47 @@ export class BolotaAgent {
   async handle(sessionId, message) {
     const intent = intentDetector.detect(message);
 
+    let payload;
+
     switch (intent) {
       case 'GREETINGS':
-        return this._handleGreetings();
+        payload = this._handleGreetings();
+        break;
 
       case 'GOODBYE':
-        return this._handleGoodbye();
+        payload = this._handleGoodbye();
+        break;
 
       case 'HELP':
-        return this._handleHelp();
+        payload = this._handleHelp();
+        break;
 
       case 'NEGATE':
-        return this._handleNegate();
+        payload = this._handleNegate();
+        break;
 
       case 'ASK_FOR_MED_NAME':
-        return this._handleAskForMedName();
+        payload = this._handleAskForMedName();
+        break;
 
       case 'MEDICINE_INFO':
-        return this._handleMedicineInfo(sessionId, message);
+        payload = await this._handleMedicineInfo(sessionId, message);
+        break;
 
       case 'CHECK_AVAILABILITY':
       case 'CONFIRM':
-        return this._handleAvailability(sessionId);
+        payload = await this._handleAvailability(sessionId);
+        break;
 
       default:
-        return this._handleUnknown();
+        payload = this._handleUnknown();
+        break;
     }
+
+    return {
+      ...payload,
+      intent
+    };
   }
 
   _handleGreetings() {
@@ -75,14 +90,14 @@ export class BolotaAgent {
   _handleAskForMedName() {
     return {
       reply:
-        'Claro, posso te ajudar com isso! Me diga o nome do medicamento que você quer saber mais. 🐶📘\n\n'
+        'Claro, posso te ajudar com isso! Me diga o nome do medicamento que você quer saber mais. 🐶📘'
     };
   }
 
   _handleUnknown() {
     return {
       reply:
-        'Desculpe, não entendi muito bem. Pode reformular a frase ou mencionar o nome do medicamento? 🐾\n\n'
+        'Desculpe, não entendi muito bem. Pode reformular a frase ou mencionar o nome do medicamento? 🐾'
     };
   }
 
@@ -137,7 +152,8 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
     if (!med) {
       return {
         reply:
-          'Posso consultar preço e estoque, sim! Me diga primeiro o nome do medicamento que você quer verificar. 🐾\n\n'
+          'Posso consultar preço e estoque, sim! Me diga primeiro o nome do medicamento que você quer verificar. 🐾\n\n' +
+          '⚠️ E lembre-se: a decisão de uso é sempre do médico veterinário.'
       };
     }
 
@@ -145,9 +161,7 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
 
     if (!meds.length) {
       return {
-        reply:
-          `Não encontrei **${med}** no nosso inventário local.\n\n` +
-          '⚠️ Mesmo assim, converse com um veterinário para avaliar alternativas e tratamento adequado.'
+        reply: `Não encontrei **${med}** no nosso inventário local.`
       };
     }
 
