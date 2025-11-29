@@ -17,6 +17,14 @@ class StateManager {
   clear(sessionId) {
     this.sessions.delete(sessionId);
   }
+
+  getLastMedication(sessionId) {
+    return this.get(sessionId).lastMedication;
+  }
+
+  setLastMedication(sessionId, medicationName) {
+    this.set(sessionId, { lastMedication: medicationName });
+  }
 }
 
 export default new StateManager();
