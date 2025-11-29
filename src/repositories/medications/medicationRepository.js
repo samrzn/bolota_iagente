@@ -16,7 +16,7 @@ export default class MedicationRepository {
       .limit(limit);
     if (textResults?.length) return textResults;
     const regex = new RegExp(
-      query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'),
+      query.replaceAll(/[-/\\^$*+?.()|[\]{}]/g, String.raw`\$&`),
       'i'
     );
     return Medication.find({ description: regex }).limit(limit);

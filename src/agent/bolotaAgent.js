@@ -2,70 +2,104 @@ import intentDetector from './intentDetector.js';
 import stateManager from './stateManager.js';
 import toolsRegistry from './toolsRegistry.js';
 
-class BolotaAgent {
+export class BolotaAgent {
   async handle(sessionId, message) {
     const intent = intentDetector.detect(message);
+
     switch (intent) {
       case 'MEDICINE_INFO':
         return this._handleMedicineInfo(sessionId, message);
-      case 'CHECK_AVAILABILITY':
-        return this._handleCheckAvailability(sessionId, message);
+
       case 'CONFIRM':
         return this._handleConfirm(sessionId);
+
       default:
         return {
-          text: "Posso ajudar com medicamentos veterinários. Pergunte, por exemplo: 'Me fale sobre Amoxicilina'."
+          reply:
+            'Desculpe, não entendi muito bem. Pode repetir de outra maneira? 🐾\n\n⚠️ Lembre-se: medicamentos para animais devem ser usados somente com prescrição e orientação de um médico veterinário.'
         };
     }
   }
 
   async _handleMedicineInfo(sessionId, message) {
-    const match = message.match(/sobre\s+([\w-]+)/i);
-    const med = match?.[1] ? match[1].toLowerCase() : message.split(' ')[1];
-    stateManager.set(sessionId, {
-      lastMedication: med,
-      step: 'awaiting_confirmation'
-    });
+    const medMatch = message.toLowerCase().match(/sobre\s+(.+)/);
+    const med = medMatch ? medMatch[1] : null;
+
+    if (!med) {
+      return {
+        reply:
+          'Claro! Pode me dizer qual medicamento você gostaria de saber mais? 🐶📘\n\n⚠️ Sempre consulte um veterinário antes de medicar o seu animalzinho.'
+      };
+    }
+
+    stateManager.setLastMedication(sessionId, med);
 
     const articles = await toolsRegistry.findArticles(med);
-    const summary = articles.length
-      ? articles.map((a) => `- ${a.title} (${a.pubdate})`).join('\n')
-      : 'Nenhum estudo encontrado.';
-    const text = `A ${med} é um medicamento veterinário. Aqui estão alguns estudos recentes:\n${summary}\nDeseja ver preço e estoque?`;
-    return { text, articles };
-  }
 
-  async _handleCheckAvailability(sessionId, message) {
-    const session = stateManager.get(sessionId);
-    const med = session.lastMedication || (message || '').trim();
-    if (!med)
+    if (!articles.length) {
       return {
-        text: 'Qual medicamento você deseja consultar (ex: Amoxicilina)?'
+        reply: `Não encontrei artigos recentes sobre **${med}** no PubMed.\n\nQuer verificar preço e estoque no sistema local?`
       };
+    }
 
-    const items = await toolsRegistry.findMedication(med);
-    if (!items || items.length === 0)
-      return { text: `Não encontrei ${med} no inventário local.` };
+    const a = articles[0];
 
-    const item = items[0];
-    const text = `Produto: ${item.description}\nPreço: R$ ${item.price}\nEstoque: ${item.stock}\n⚠️ Uso somente com prescrição veterinária.`;
-    return { text, item };
+    const reply = `
+Encontrei informações interessantes sobre **${med}**! 🧪🐾
+
+**• Título:** ${a.title}
+**• Revista:** ${a.journal || 'Não informado'}
+**• Autores:** ${a.authors.join(', ') || 'Não informado'}
+**• Resumo:** ${a.abstract.slice(0, 300)}${a.abstract.length > 300 ? '...' : ''}
+**• Link para leitura completa:** ${a.link}
+
+Antes de prosseguirmos, ⚠️ *lembre-se*: qualquer uso de medicamentos em animais deve ser prescrito e orientado por um médico veterinário.
+
+Deseja ver **preço e estoque** no nosso sistema local?
+    `.trim();
+
+    return { reply };
   }
 
   async _handleConfirm(sessionId) {
-    const session = stateManager.get(sessionId);
-    if (!session.lastMedication)
-      return { text: 'Sobre qual medicamento você quer a confirmação?' };
+    const med = stateManager.getLastMedication(sessionId);
 
-    const items = await toolsRegistry.findMedication(session.lastMedication);
-    if (!items || items.length === 0)
+    if (!med) {
       return {
-        text: `Não encontrei ${session.lastMedication} no inventário local.`
+        reply: 'Claro! Qual medicamento você deseja consultar? 🐾'
       };
+    }
 
-    const item = items[0];
-    const text = `Produto: ${item.description}\nPreço: R$ ${item.price}\nEstoque: ${item.stock}\n⚠️ Uso somente com prescrição veterinária.`;
-    return { text, item };
+    const meds = await toolsRegistry.findMedication(med);
+
+    if (!meds.length) {
+      return {
+        reply: `Não encontrei **${med}** no nosso inventário local.⚠️`
+      };
+    }
+
+    const item = meds[0];
+
+    if (item.stock === 0) {
+      return {
+        reply: `
+O medicamento **${item.description}** está cadastrado no sistema, mas atualmente está **fora de estoque**. ❌
+
+⚠️ Uso somente com indicação e prescrição veterinária.
+        `.trim()
+      };
+    }
+
+    return {
+      reply: `
+Aqui está o que encontrei sobre **${item.description}**:
+
+💵 **Preço:** R$ ${item.price.toFixed(2)}
+📦 **Estoque disponível:** ${item.stock} unidade(s)
+
+⚠️ *Lembre-se:* este medicamento deve ser utilizado **somente com prescrição de profissional veterinário**.
+      `.trim()
+    };
   }
 }
 

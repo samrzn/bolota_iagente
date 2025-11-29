@@ -1,4 +1,4 @@
-export default class MedicationService {
+export class MedicationService {
   /**
    * @param {MedicationRepository} repository
    */
@@ -7,19 +7,20 @@ export default class MedicationService {
   }
 
   async find(query) {
-    if (!query || typeof query !== 'string') return [];
-    const codeMatch = await this.repository.findByCode(query);
-    if (codeMatch) return [this._toDto(codeMatch)];
+    const byCode = await this.repository.findByCode(query);
+    if (byCode) return this._format(byCode);
+
     const results = await this.repository.searchByText(query);
-    return results.map(this._toDto);
+    return results.length ? this._format(results[0]) : null;
   }
 
-  _toDto(doc) {
+  _format(doc) {
     return {
       code: doc.code,
       description: doc.description,
       price: doc.price,
-      stock: doc.stock
+      stock: doc.stock,
+      status: doc.stock > 0 ? 'available' : 'out_of_stock'
     };
   }
 }

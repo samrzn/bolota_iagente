@@ -1,40 +1,94 @@
 import axios from 'axios';
 import loggerHelper from '../../../infra/logger.js';
 
-export default class PubMedService {
-  constructor(baseUrl = process.env.PUBMED_URL) {
-    this.baseUrl = baseUrl;
-    this.client = axios.create({ timeout: 5000 });
+export class PubMedService {
+  constructor() {
+    this.baseUrl = process.env.PUBMED_URL;
   }
 
-  async search(term, maxResults = 3) {
-    if (!term) return [];
+  async searchIds(query) {
     try {
-      const esearch = `${this.baseUrl}/esearch.fcgi`;
-      const sRes = await this.client.get(esearch, {
-        params: { db: 'pubmed', retmode: 'json', retmax: maxResults, term }
+      const url = `${this.baseUrl}/esearch.fcgi`;
+      const response = await axios.get(url, {
+        params: {
+          db: 'pubmed',
+          term: query,
+          retmode: 'json'
+        }
       });
-      const ids = sRes.data?.esearchresult?.idlist || [];
-      if (!ids.length) return [];
-      const summary = `${this.baseUrl}/esummary.fcgi`;
-      const sumRes = await this.client.get(summary, {
-        params: { db: 'pubmed', retmode: 'json', id: ids.join(',') }
+
+      return response.data.esearchresult.idlist || [];
+    } catch (err) {
+      loggerHelper.error('Erro ao buscar IDs no PubMed', err);
+      return [];
+    }
+  }
+
+  async fetchArticleDetails(ids) {
+    if (!ids.length) return [];
+
+    try {
+      const url = `${this.baseUrl}/efetch.fcgi`;
+
+      const response = await axios.get(url, {
+        params: {
+          db: 'pubmed',
+          id: ids.join(','),
+          rettype: 'abstract',
+          retmode: 'xml'
+        }
       });
-      const result = sumRes.data?.result || {};
-      return ids.map((id) => {
-        const item = result[id] || {};
+
+      const xml = response.data;
+
+      const articles = xml.split('<PubMedArticle>').slice(1);
+
+      return articles.map((articleXml) => {
+        const getBetween = (a, b) => {
+          const start = articleXml.indexOf(a);
+          if (start === -1) return '';
+          const end = articleXml.indexOf(b, start + a.length);
+          return end === -1
+            ? ''
+            : articleXml.substring(start + a.length, end).trim();
+        };
+
+        const id = getBetween('<PMID', '</PMID>').replace(/.*?>/, '');
+        const title = getBetween('<ArticleTitle>', '</ArticleTitle>');
+        const journal = getBetween('<Title>', '</Title>');
+        const pubdate = getBetween('<PubDate>', '</PubDate>').replaceAll(
+          /<[^>]+>/g,
+          ''
+        );
+        const abstract = getBetween('<AbstractText>', '</AbstractText>');
+
+        const authorsChunk = articleXml.split('<Author>').slice(1);
+        const authors = authorsChunk.map((chunk) => {
+          const last = chunk.match(/<LastName>(.*?)<\/LastName>/);
+          const fore = chunk.match(/<ForeName>(.*?)<\/ForeName>/);
+          return `${fore ? fore[1] : ''} ${last ? last[1] : ''}`.trim();
+        });
+
         return {
           id,
-          title: item.title,
-          authors: (item.authors || []).map((a) => a.name),
-          source: item.source,
-          pubdate: item.pubdate,
+          title,
+          journal,
+          pubdate,
+          authors,
+          abstract: abstract || 'Resumo não disponível',
           link: `https://pubmed.ncbi.nlm.nih.gov/${id}/`
         };
       });
     } catch (err) {
-      loggerHelper.warn('PubMedService.search failed: %s', err.message);
+      loggerHelper.error('Erro ao buscar detalhes no PubMed', err);
       return [];
     }
   }
+
+  async searchArticles(query) {
+    const ids = await this.searchIds(query);
+    return await this.fetchArticleDetails(ids);
+  }
 }
+
+export default new PubMedService();
