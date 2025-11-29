@@ -29,6 +29,10 @@ export class BolotaAgent {
         payload = this._handleAskForMedName();
         break;
 
+      case 'MEDICINE_NAME_ONLY':
+        payload = await this._handleMedicineNameOnly(sessionId, message);
+        break;
+
       case 'MEDICINE_INFO':
         payload = await this._handleMedicineInfo(sessionId, message);
         break;
@@ -101,6 +105,53 @@ export class BolotaAgent {
     };
   }
 
+  async _handleMedicineNameOnly(sessionId, message) {
+    const med = message.trim();
+
+    stateManager.setLastMedication(sessionId, med);
+
+    const { step } = stateManager.get(sessionId);
+
+    if (step === 'AWAITING_MED_FOR_AVAILABILITY') {
+      stateManager.set(sessionId, { step: null });
+      return this._handleAvailability(sessionId);
+    }
+
+    const articles = await toolsRegistry.findArticles(med);
+
+    if (!articles.length) {
+      return {
+        reply:
+          `Não encontrei artigos recentes sobre **${med}** no PubMed.\n\n` +
+          'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾\n\n' +
+          'Deseja que eu verifique **preço e estoque** desse medicamento no sistema local?'
+      };
+    }
+
+    const a = articles[0];
+
+    const summary =
+      a.abstract && a.abstract.length > 300
+        ? `${a.abstract.slice(0, 300)}...`
+        : a.abstract || 'Resumo não disponível.';
+
+    const reply = `
+Encontrei informações interessantes sobre **${med}**! 🧪🐾
+
+**• Título:** ${a.title}
+**• Revista:** ${a.journal || 'Não informado'}
+**• Autores:** ${a.authors?.join(', ') || 'Não informados'}
+**• Resumo:** ${summary}
+**• Link para leitura completa:** ${a.link}
+
+⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.
+
+Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
+    `.trim();
+
+    return { reply };
+  }
+
   async _handleMedicineInfo(sessionId, message) {
     const medMatch = message.toLowerCase().match(/sobre\s+(.+)/);
     const med = medMatch ? medMatch[1].trim() : null;
@@ -150,12 +201,16 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
     const med = stateManager.getLastMedication(sessionId);
 
     if (!med) {
+      stateManager.set(sessionId, { step: 'AWAITING_MED_FOR_AVAILABILITY' });
+
       return {
         reply:
           'Posso consultar preço e estoque, sim! Me diga primeiro o nome do medicamento que você quer verificar. 🐾\n\n' +
           '⚠️ E lembre-se: a decisão de uso é sempre do médico veterinário.'
       };
     }
+
+    stateManager.set(sessionId, { step: null });
 
     const meds = await toolsRegistry.findMedication(med);
 
