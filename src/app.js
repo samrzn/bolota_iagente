@@ -23,7 +23,7 @@ try {
 
 app.use('/medications', medicationRoutes);
 app.use('/pubmed', pubmedRoutes);
-app.use('/webhook', webhookRoutes);
+app.use('/webhook/bolota', webhookRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

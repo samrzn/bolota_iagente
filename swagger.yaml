@@ -1,44 +1,226 @@
-openapi: '3.0.0'
+openapi: 3.0.0
 info:
-  title: Bolota Agent API
-  version: '1.0.0'
+  title: Bolota IAgente API
+  version: 1.0.0
+  description: >
+    API de suporte ao agente Bolota para consulta de medicamentos veterinários,
+    artigos científicos (PubMed) e estoque local.
+
+servers:
+  - url: http://localhost:3000
+    description: Ambiente local de desenvolvimento
+
 paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Verifica se o serviço está ativo
+      responses:
+        '200':
+          description: Serviço operacional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
   /medications:
     get:
-      summary: Search medications
+      tags:
+        - Medications
+      summary: Busca medicamento no inventário local
+      description: >
+        Permite buscar medicamentos por nome ou código, retornando preço, estoque
+        e status de disponibilidade.
       parameters:
         - in: query
           name: query
           schema:
             type: string
+            example: simparic
+          required: true
+          description: Nome ou código do medicamento.
       responses:
         '200':
-          description: OK
+          description: Lista de medicamentos encontrados (no máximo 1 item, hoje).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Medication'
+                  message:
+                    type: string
+                    nullable: true
+                    example: Nenhum medicamento encontrado para o critério informado.
+        '400':
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /pubmed:
     get:
-      summary: Search pubmed articles
+      tags:
+        - PubMed
+      summary: Busca artigos científicos no PubMed
+      description: >
+        Retorna artigos científicos relacionados ao termo informado,
+        incluindo título, periódico, autores, resumo e link.
       parameters:
         - in: query
           name: query
           schema:
             type: string
+            example: amoxicillin dog
+          required: true
+          description: Termo de busca no PubMed.
       responses:
         '200':
-          description: OK
+          description: Lista de artigos encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PubMedArticle'
+        '400':
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /webhook/bolota:
     post:
-      summary: Webhook for Bolota
+      tags:
+        - Webhook
+      summary: Webhook do agente Bolota
+      description: >
+        Endpoint usado para orquestrar o agente Bolota. Recebe uma mensagem do usuário
+        (e opcionalmente um sessionId) e retorna a resposta do agente, junto com o
+        sessionId utilizado para manter o contexto da conversa.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                sessionId:
-                  type: string
-                message:
-                  type: string
+              $ref: '#/components/schemas/BolotaWebhookRequest'
       responses:
         '200':
-          description: OK
+          description: Resposta do agente Bolota
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BolotaWebhookResponse'
+        '400':
+          description: Body inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Medication:
+      type: object
+      properties:
+        code:
+          type: string
+          example: '123'
+        description:
+          type: string
+          example: 'Simparic 10mg'
+        price:
+          type: number
+          format: float
+          example: 99.9
+        stock:
+          type: integer
+          example: 5
+        status:
+          type: string
+          enum: [available, out_of_stock]
+          example: available
+
+    PubMedArticle:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '12345678'
+        title:
+          type: string
+          example: 'Study on amoxicillin use in dogs'
+        journal:
+          type: string
+          example: 'Veterinary Journal'
+        authors:
+          type: array
+          items:
+            type: string
+          example:
+            - 'John Doe'
+            - 'Jane Smith'
+        abstract:
+          type: string
+          example: >
+            This study investigates the use of amoxicillin in canine patients...
+        pubdate:
+          type: string
+          example: '2023 Jan'
+        link:
+          type: string
+          format: uri
+          example: 'https://pubmed.ncbi.nlm.nih.gov/12345678/'
+
+    BolotaWebhookRequest:
+      type: object
+      required:
+        - message
+      properties:
+        sessionId:
+          type: string
+          nullable: true
+          example: 'sess_1732729300000_42'
+        message:
+          type: string
+          example: 'Me fale sobre amoxicilina para cães'
+
+    BolotaWebhookResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          example: 'sess_1732729300000_42'
+        agent:
+          type: string
+          example: 'Bolota'
+        reply:
+          type: string
+          example: >
+            Encontrei informações interessantes sobre amoxicilina...
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Parâmetros inválidos'
+        details:
+          type: array
+          items:
+            type: string
+          example:
+            - '"query" is required'
