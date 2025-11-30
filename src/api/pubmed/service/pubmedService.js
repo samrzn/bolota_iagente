@@ -85,13 +85,24 @@ export class PubMedService {
 
         const abstractText = getBetween('<AbstractText>', '</AbstractText>');
 
-        const authorsChunks = articleXml.split('<Author>').slice(1);
-        const authors = authorsChunks
-          .map((chunk) => {
-            const last = chunk.match(/<LastName>(.*?)<\/LastName>/);
-            const fore = chunk.match(/<ForeName>(.*?)<\/ForeName>/);
-            const full = `${fore ? fore[1] : ''} ${last ? last[1] : ''}`.trim();
-            return full || null;
+        const authorBlocks =
+          articleXml.match(/<Author\b[^>]*>[\s\S]*?<\/Author>/g) || [];
+
+        const authors = authorBlocks
+          .map((block) => {
+            const last = block.match(/<LastName>([^<]+)<\/LastName>/);
+            const fore = block.match(/<ForeName>([^<]+)<\/ForeName>/);
+            const initials = block.match(/<Initials>([^<]+)<\/Initials>/);
+            const collective = block.match(
+              /<CollectiveName>([^<]+)<\/CollectiveName>/
+            );
+
+            if (fore && last) return `${fore[1]} ${last[1]}`;
+            if (last && initials) return `${last[1]} ${initials[1]}`;
+            if (last) return last[1];
+            if (collective) return collective[1];
+
+            return null;
           })
           .filter(Boolean);
 
