@@ -7,20 +7,20 @@ const GENERIC_INFO_TOKENS = new Set([
   'fale',
   'falar',
   'sobre',
-  'sabe',
   'informacao',
-  'informações',
-  'informacoes',
-  'informação',
   'para',
   'que',
   'serve',
   'indicacoes',
-  'indicações',
   'de',
   'do',
   'da',
-  'uso'
+  'uso',
+  'o',
+  'voce',
+  'vc',
+  'sabe',
+  'saber'
 ]);
 
 export class BolotaAgent {
@@ -80,10 +80,13 @@ export class BolotaAgent {
   }
 
   _getImportantTokens(message = '') {
-    const lower = message.toLowerCase();
+    const normalized = message
+      .toLowerCase()
+      .normalize('NFD')
+      .replaceAll(/[\u0300-\u036f]/g, '');
 
-    const tokens = lower
-      .replaceAll(/[^\wÀ-ÿ\s]/g, ' ')
+    const tokens = normalized
+      .replaceAll(/[^\w\s]/g, ' ')
       .replaceAll(/\s+/g, ' ')
       .trim()
       .split(' ')

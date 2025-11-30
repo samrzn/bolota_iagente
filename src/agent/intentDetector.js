@@ -5,14 +5,16 @@ class IntentDetector {
         keywords: [
           'me fale sobre',
           'falar sobre',
+          'informacao',
           'informação',
           'explicar',
           'para que serve',
+          'o que e',
           'o que é',
           'sobre',
+          'indicacao',
           'indicação',
           'indicações de uso',
-          'preciso saber',
           'uso'
         ],
         stems: ['medic', 'remed', 'trat', 'us', 'indic']
@@ -23,11 +25,11 @@ class IntentDetector {
           'preço',
           'preco',
           'valor',
-          'tem disponível',
           'tem disponivel',
+          'tem disponível',
           'tem ai',
-          'disponível',
-          'disponivel'
+          'disponivel',
+          'disponível'
         ],
         stems: ['estoq', 'prec', 'val', 'dispon']
       }
@@ -55,28 +57,34 @@ class IntentDetector {
   }
 
   isGreetings(norm) {
-    return /^(oi|ola|olá|bom dia|boa tarde|boa noite)\b/.test(norm);
+    return /^(oi|ola|bom dia|boa tarde|boa noite)\b/.test(norm);
   }
 
   isGoodbye(norm) {
-    return /(tchau|ate mais|até mais|valeu|obrigado|brigado)$/.test(norm);
+    return /(tchau|ate mais|valeu|obrigado|brigado)$/.test(norm);
   }
 
   isHelp(norm) {
-    return /(ajuda|como funciona|o que voce faz|o que você faz|o q vc faz)/.test(
+    return /(ajuda|como funciona|o que voce faz|preciso|saber|o q vc faz)/.test(
       norm
     );
   }
 
   isNegate(norm) {
-    return /^(nao|não|prefiro que nao|prefiro que não|deixa pra depois)/.test(
-      norm
-    );
+    return /^(nao|prefiro que nao|deixa pra depois)/.test(norm);
   }
 
   isConfirm(norm) {
     const trimmed = norm.trim();
     return /^(sim|claro|ok|pode|yes|isso|quero|por favor)\b/.test(trimmed);
+  }
+
+  isWhatYouKnow(norm, tokens) {
+    if (!norm.includes('o que voce sabe')) {
+      return false;
+    }
+
+    return tokens.length > 4;
   }
 
   scoreIntent(tokens, cfg) {
@@ -111,6 +119,8 @@ class IntentDetector {
     if (this.isHelp(norm)) return 'HELP';
     if (this.isNegate(norm)) return 'NEGATE';
     if (this.isConfirm(norm)) return 'CONFIRM';
+
+    if (this.isWhatYouKnow(norm, tokens)) return 'MEDICINE_INFO';
 
     let bestIntent = 'UNKNOWN';
     let bestScore = 0;
