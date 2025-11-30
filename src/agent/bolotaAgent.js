@@ -8,10 +8,14 @@ const GENERIC_INFO_TOKENS = new Set([
   'falar',
   'sobre',
   'informacao',
+  'informações',
+  'informacoes',
+  'informação',
   'para',
   'que',
   'serve',
   'indicacoes',
+  'indicações',
   'de',
   'do',
   'da',
@@ -60,7 +64,7 @@ export class BolotaAgent {
 
       case 'CHECK_AVAILABILITY':
       case 'CONFIRM':
-        payload = await this._handleAvailability(sessionId);
+        payload = await this._handleAvailability(sessionId, message);
         break;
 
       default:
@@ -77,6 +81,13 @@ export class BolotaAgent {
       reply,
       intent
     };
+  }
+
+  _cleanMedicationName(raw = '') {
+    return raw
+      .replaceAll(/[^\wÀ-ÿ\s]/g, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim();
   }
 
   _getImportantTokens(message = '') {
@@ -113,7 +124,7 @@ export class BolotaAgent {
     for (const regex of patterns) {
       const match = regex.exec(lower);
       if (match?.[1]) {
-        return match[1].trim();
+        return this._cleanMedicationName(match[1]);
       }
     }
 
@@ -126,7 +137,39 @@ export class BolotaAgent {
 
     const tokens = cleaned.split(' ');
     const lastToken = tokens.at(-1);
-    return lastToken || null;
+    return this._cleanMedicationName(lastToken || '');
+  }
+
+  _extractMedicationFromAvailabilityQuestion(message = '') {
+    if (!message) return null;
+
+    const original = message;
+    const lower = original.toLowerCase();
+
+    const patterns = [
+      /estoque (?:de|do|da)?\s+(.+)/i,
+      /no estoque (?:de|do|da)?\s+(.+)/i,
+      /tem no estoque (?:de|do|da)?\s+(.+)/i,
+      /pre[cç]o (?:de|do|da)?\s+(.+)/i,
+      /qual o pre[cç]o (?:de|do|da)?\s+(.+)/i,
+      /valor (?:de|do|da)?\s+(.+)/i,
+      /quanto (?:custa|e|é)\s+(?:o|a)?\s+(.+)/i
+    ];
+
+    for (const regex of patterns) {
+      const match = regex.exec(lower);
+      if (match?.[1]) {
+        return this._cleanMedicationName(match[1]);
+      }
+    }
+
+    const importantTokens = this._getImportantTokens(message);
+    if (!importantTokens.length) {
+      return null;
+    }
+
+    const lastImportant = importantTokens.at(-1);
+    return this._cleanMedicationName(lastImportant || '');
   }
 
   _handleGreetings() {
@@ -188,7 +231,8 @@ export class BolotaAgent {
       return this._handleAskForMedName();
     }
 
-    const med = message.trim();
+    const medRaw = message.trim();
+    const med = this._cleanMedicationName(medRaw);
 
     stateManager.setLastMedication(sessionId, med);
 
@@ -196,7 +240,7 @@ export class BolotaAgent {
 
     if (step === 'AWAITING_MED_FOR_AVAILABILITY') {
       stateManager.set(sessionId, { step: null });
-      return this._handleAvailability(sessionId);
+      return this._handleAvailability(sessionId, med);
     }
 
     const articles = await toolsRegistry.findArticles(med);
@@ -278,8 +322,18 @@ export class BolotaAgent {
     return { reply: replyLines.join('') };
   }
 
-  async _handleAvailability(sessionId) {
-    const med = stateManager.getLastMedication(sessionId);
+  async _handleAvailability(sessionId, message = '') {
+    let med = null;
+
+    const medFromQuestion =
+      this._extractMedicationFromAvailabilityQuestion(message);
+
+    if (medFromQuestion) {
+      med = medFromQuestion;
+      stateManager.setLastMedication(sessionId, medFromQuestion);
+    } else {
+      med = stateManager.getLastMedication(sessionId);
+    }
 
     if (!med) {
       stateManager.set(sessionId, { step: 'AWAITING_MED_FOR_AVAILABILITY' });
