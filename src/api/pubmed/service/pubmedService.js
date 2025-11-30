@@ -6,20 +6,20 @@ function decodeHtmlEntities(str) {
 
   let result = str;
 
-  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-    String.fromCodePoint(parseInt(hex, 16))
+  result = result.replaceAll(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
   );
 
-  result = result.replace(/&#(\d+);/g, (_, dec) =>
-    String.fromCodePoint(parseInt(dec, 10))
+  result = result.replaceAll(/&#(\d+);/g, (_, dec) =>
+    String.fromCodePoint(Number.parseInt(dec, 10))
   );
 
   result = result
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&apos;', "'");
 
   return result;
 }
@@ -104,7 +104,7 @@ export class PubMedService {
         const rawJournal = getBetween('<Title>', '</Title>');
 
         const pubdateRaw = getBetween('<PubDate>', '</PubDate>');
-        const pubdateClean = pubdateRaw.replace(/<[^>]+>/g, '').trim();
+        const pubdateClean = pubdateRaw.replaceAll(/<[^>]+>/g, '').trim();
 
         const rawAbstract = getBetween('<AbstractText>', '</AbstractText>');
 
