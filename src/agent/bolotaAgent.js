@@ -8,9 +8,9 @@ const GENERIC_INFO_TOKENS = new Set([
   'falar',
   'sobre',
   'informacao',
-  'informações',
   'informacoes',
   'informação',
+  'informações',
   'para',
   'que',
   'serve',
@@ -24,7 +24,14 @@ const GENERIC_INFO_TOKENS = new Set([
   'voce',
   'vc',
   'sabe',
-  'saber'
+  'saber',
+  'tem',
+  'disponivel',
+  'estoque',
+  'ai',
+  'no',
+  'na',
+  'em'
 ]);
 
 export class BolotaAgent {
