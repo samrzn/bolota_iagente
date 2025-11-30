@@ -66,8 +66,7 @@ export class BolotaAgent {
     return {
       reply:
         'Obrigado pela conversa! 🐶💊\n' +
-        'Se tiver mais dúvidas sobre medicamentos veterinários, é só chamar.\n\n' +
-        '⚠️ E não esqueça: sempre consulte um veterinário antes de medicar um animal.'
+        'Se tiver mais dúvidas sobre medicamentos veterinários, é só chamar.\n\n'
     };
   }
 
@@ -123,7 +122,6 @@ export class BolotaAgent {
       return {
         reply:
           `Não encontrei artigos recentes sobre ${med} no PubMed.\n\n` +
-          'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾\n\n' +
           'Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
       };
     }

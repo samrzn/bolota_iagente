@@ -61,7 +61,9 @@ class IntentDetector {
   }
 
   isHelp(norm) {
-    return /(ajuda|como funciona|o que voce faz|o que você faz)/.test(norm);
+    return /(ajuda|como funciona|o que voce faz|o que você faz|preciso|saber|o q vc faz)/.test(
+      norm
+    );
   }
 
   isNegate(norm) {
@@ -72,7 +74,7 @@ class IntentDetector {
 
   isConfirm(norm) {
     const trimmed = norm.trim();
-    return /^(sim|claro|ok|pode|yes|isso|quero)\b/.test(trimmed);
+    return /^(sim|claro|ok|pode|yes|isso|quero|por favor)\b/.test(trimmed);
   }
 
   scoreIntent(tokens, cfg) {
