@@ -11,6 +11,7 @@ class IntentDetector {
           'o que é',
           'sobre',
           'indicação',
+          'indicações de uso',
           'uso'
         ],
         stems: ['medic', 'remed', 'trat', 'us', 'indic']

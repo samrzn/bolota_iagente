@@ -40,7 +40,17 @@ export async function handleWebhook(req, res, next) {
 
     const agentResponse = await bolotaAgent.handle(sessionId, message);
 
-    const sample = agentResponse.reply?.replaceAll(/\s+/g, ' ').slice(0, 120);
+    let replyText;
+
+    if (typeof agentResponse.reply === 'string') {
+      replyText = agentResponse.reply;
+    } else if (Array.isArray(agentResponse.reply)) {
+      replyText = agentResponse.reply.join(' ');
+    } else {
+      replyText = String(agentResponse.reply ?? '');
+    }
+
+    const sample = replyText.replaceAll(/\s+/g, ' ').slice(0, 120);
 
     loggerHelper.info('BolotaWebhook response', {
       sessionId,
@@ -51,7 +61,7 @@ export async function handleWebhook(req, res, next) {
     return res.status(200).json({
       sessionId,
       agent: 'Bolota',
-      reply: agentResponse.reply
+      reply: replyText
     });
   } catch (err) {
     next(err);
