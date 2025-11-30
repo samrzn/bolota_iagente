@@ -1,6 +1,29 @@
 import axios from 'axios';
 import loggerHelper from '../../../infra/logger.js';
 
+function decodeHtmlEntities(str) {
+  if (!str) return str;
+
+  let result = str;
+
+  result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+    String.fromCodePoint(parseInt(hex, 16))
+  );
+
+  result = result.replace(/&#(\d+);/g, (_, dec) =>
+    String.fromCodePoint(parseInt(dec, 10))
+  );
+
+  result = result
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+
+  return result;
+}
+
 export class PubMedService {
   constructor(baseUrl = process.env.PUBMED_URL) {
     this.baseUrl = baseUrl;
@@ -75,15 +98,15 @@ export class PubMedService {
         };
 
         const idRaw = getBetween('<PMID', '</PMID>');
-        const id = idRaw.replace(/.*?>/, '').trim();
+        const id = decodeHtmlEntities(idRaw.replace(/.*?>/, '').trim());
 
-        const title = getBetween('<ArticleTitle>', '</ArticleTitle>');
-        const journal = getBetween('<Title>', '</Title>');
+        const rawTitle = getBetween('<ArticleTitle>', '</ArticleTitle>');
+        const rawJournal = getBetween('<Title>', '</Title>');
 
         const pubdateRaw = getBetween('<PubDate>', '</PubDate>');
-        const pubdate = pubdateRaw.replaceAll(/<[^>]+>/g, '').trim();
+        const pubdateClean = pubdateRaw.replace(/<[^>]+>/g, '').trim();
 
-        const abstractText = getBetween('<AbstractText>', '</AbstractText>');
+        const rawAbstract = getBetween('<AbstractText>', '</AbstractText>');
 
         const authorBlocks =
           articleXml.match(/<Author\b[^>]*>[\s\S]*?<\/Author>/g) || [];
@@ -97,10 +120,12 @@ export class PubMedService {
               /<CollectiveName>([^<]+)<\/CollectiveName>/
             );
 
-            if (fore && last) return `${fore[1]} ${last[1]}`;
-            if (last && initials) return `${last[1]} ${initials[1]}`;
-            if (last) return last[1];
-            if (collective) return collective[1];
+            if (fore && last)
+              return decodeHtmlEntities(`${fore[1]} ${last[1]}`);
+            if (last && initials)
+              return decodeHtmlEntities(`${last[1]} ${initials[1]}`);
+            if (last) return decodeHtmlEntities(last[1]);
+            if (collective) return decodeHtmlEntities(collective[1]);
 
             return null;
           })
@@ -108,11 +133,11 @@ export class PubMedService {
 
         return {
           id,
-          title: title || 'Título não disponível',
-          journal: journal || 'Periódico não informado',
-          pubdate: pubdate || '',
+          title: decodeHtmlEntities(rawTitle) || 'Título não disponível',
+          journal: decodeHtmlEntities(rawJournal) || 'Periódico não informado',
+          pubdate: decodeHtmlEntities(pubdateClean) || '',
           authors,
-          abstract: abstractText || 'Resumo não disponível',
+          abstract: decodeHtmlEntities(rawAbstract) || 'Resumo não disponível',
           link: id ? `https://pubmed.ncbi.nlm.nih.gov/${id}/` : ''
         };
       });

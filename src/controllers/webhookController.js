@@ -51,8 +51,7 @@ export async function handleWebhook(req, res, next) {
     return res.status(200).json({
       sessionId,
       agent: 'Bolota',
-      reply: agentResponse.reply,
-      intent: agentResponse.intent
+      reply: agentResponse.reply
     });
   } catch (err) {
     next(err);
