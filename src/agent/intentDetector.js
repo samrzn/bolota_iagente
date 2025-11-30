@@ -12,6 +12,7 @@ class IntentDetector {
           'sobre',
           'indicação',
           'indicações de uso',
+          'preciso saber',
           'uso'
         ],
         stems: ['medic', 'remed', 'trat', 'us', 'indic']
@@ -62,7 +63,7 @@ class IntentDetector {
   }
 
   isHelp(norm) {
-    return /(ajuda|como funciona|o que voce faz|o que você faz|preciso|saber|o q vc faz)/.test(
+    return /(ajuda|como funciona|o que voce faz|o que você faz|o q vc faz)/.test(
       norm
     );
   }

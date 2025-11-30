@@ -92,7 +92,7 @@ export class BolotaAgent {
       reply:
         'Oi! Eu sou o Bolota, seu agente de apoio em medicamentos veterinários. 🐾' +
         "Você pode me perguntar, por exemplo: 'Me fale sobre amoxicilina para cães'." +
-        '⚠️ Lembre-se: qualquer medicamento para animais deve ser usado somente com orientação de um médico veterinário.'
+        ' ⚠️Lembre-se: qualquer medicamento para animais deve ser usado somente com orientação de um médico veterinário.'
     };
   }
 
@@ -108,10 +108,10 @@ export class BolotaAgent {
     return {
       reply:
         'Eu sou o Bolota, um agente focado em medicamentos veterinários. 🐾' +
-        '- Buscar estudos científicos no PubMed sobre um medicamento;' +
-        '- Verificar preço e estoque no nosso sistema local;' +
-        '- Sempre lembrar da importância da prescrição veterinária.' +
-        "Você pode começar com algo como: 'Me fale sobre Simparic para cães'."
+        ' Buscar estudos científicos no PubMed sobre um medicamento;' +
+        ' Verificar preço e estoque no nosso sistema local;' +
+        ' Sempre lembrar da importância da prescrição veterinária;' +
+        " Você pode começar com algo como: 'Me fale sobre Simparic para cães'."
     };
   }
 
@@ -156,9 +156,9 @@ export class BolotaAgent {
     if (!articles.length) {
       return {
         reply:
-          `Não encontrei artigos recentes sobre ${med} no PubMed.` +
+          `Não encontrei artigos recentes sobre ${med} no PubMed. ` +
           'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾' +
-          'Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
+          ' Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
       };
     }
 
@@ -173,14 +173,14 @@ export class BolotaAgent {
       `Encontrei informações interessantes sobre ${med}! 🧪🐾`,
       '',
       `Título: ${a.title}`,
-      `Revista: ${a.journal || 'Não informado'}`,
-      `Autores: ${a.authors?.join(', ') || 'Não informados'}`,
-      `Resumo: ${summary}`,
-      `Link para leitura completa: ${a.link}`,
+      ` Revista: ${a.journal + '.' || 'Não informado'}`,
+      ` Autores: ${a.authors?.join(', ') + '.' || 'Não informados'}`,
+      ` Resumo: ${summary}`,
+      ` Link para leitura completa: ${a.link} `,
       '',
-      '⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
+      ' ⚠️Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
       '',
-      'Deseja ver preço e estoque desse medicamento no nosso sistema local?'
+      ' Deseja ver preço e estoque desse medicamento no nosso sistema local?'
     ];
 
     return { reply: replyLines.join('') };
@@ -200,9 +200,9 @@ export class BolotaAgent {
     if (!articles.length) {
       return {
         reply:
-          `Não encontrei artigos recentes sobre ${med} no PubMed.` +
+          `Não encontrei artigos recentes sobre ${med} no PubMed. ` +
           'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾' +
-          'Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
+          ' Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
       };
     }
 
@@ -217,14 +217,14 @@ export class BolotaAgent {
       `Encontrei informações interessantes sobre ${med}! 🧪🐾`,
       '',
       `Título: ${a.title}`,
-      `Revista: ${a.journal || 'Não informado'}`,
-      `Autores: ${a.authors?.join(', ') || 'Não informados'}`,
-      `Resumo: ${summary}`,
-      `Link para leitura completa: ${a.link}`,
+      ` Revista: ${a.journal + '.' || 'Não informado'}`,
+      ` Autores: ${a.authors?.join(', ') + '.' || 'Não informados'}`,
+      ` Resumo: ${summary}`,
+      ` Link para leitura completa: ${a.link} `,
       '',
-      '⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
+      ' ⚠️Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
       '',
-      'Deseja ver preço e estoque desse medicamento no nosso sistema local?'
+      ' Deseja ver preço e estoque desse medicamento no nosso sistema local?'
     ];
 
     return { reply: replyLines.join('') };
@@ -268,11 +268,11 @@ export class BolotaAgent {
     const replyLines = [
       `Aqui está o que encontrei sobre ${item.description}:`,
       '',
-      `Preço: R$ ${item.price.toFixed(2)}`,
-      `Estoque disponível: ${item.stock} unidade(s)`,
-      `Status: ${item.status === 'available' ? 'disponível' : 'indisponível'}`,
+      ` Preço: R$ ${item.price.toFixed(2)}.`,
+      ` Estoque disponível: ${item.stock} unidade(s).`,
+      ` Status: ${item.status === 'available' ? 'disponível' : 'indisponível'}`,
       '',
-      '⚠️ Lembre-se: este medicamento deve ser utilizado somente com prescrição veterinária.'
+      ' ⚠️Lembre-se: este medicamento deve ser utilizado somente com prescrição veterinária.'
     ];
 
     return { reply: replyLines.join('') };
