@@ -105,7 +105,7 @@ paths:
   /webhook/bolota:
     post:
       tags:
-        - Webhook Bolota
+        - Bolota
       summary: Webhook do agente Bolota
       description: >
         Endpoint usado para orquestrar o agente Bolota. Recebe uma mensagem do usuário

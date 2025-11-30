@@ -40,10 +40,12 @@ export async function handleWebhook(req, res, next) {
 
     const agentResponse = await bolotaAgent.handle(sessionId, message);
 
+    const sample = agentResponse.reply?.replaceAll(/\s+/g, ' ').slice(0, 120);
+
     loggerHelper.info('BolotaWebhook response', {
       sessionId,
       intent: agentResponse.intent,
-      replySample: agentResponse.reply?.slice(0, 100)
+      replySample: sample
     });
 
     return res.status(200).json({

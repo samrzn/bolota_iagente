@@ -76,9 +76,9 @@ export class BolotaAgent {
       reply:
         'Eu sou o Bolota, um agente focado em medicamentos veterinários. 🐾\n' +
         'Consigo:\n' +
-        '• buscar estudos científicos no PubMed sobre um medicamento;\n' +
-        '• verificar preço e estoque no nosso sistema local;\n' +
-        '• sempre lembrar da importância da prescrição veterinária.\n\n' +
+        '- Buscar estudos científicos no PubMed sobre um medicamento.\n' +
+        '- Verificar preço e estoque no nosso sistema local.\n' +
+        '- Sempre lembrar da importância da prescrição veterinária.\n\n' +
         'Você pode começar com algo como: "Me fale sobre Simparic para cães".'
     };
   }
@@ -122,9 +122,9 @@ export class BolotaAgent {
     if (!articles.length) {
       return {
         reply:
-          `Não encontrei artigos recentes sobre **${med}** no PubMed.\n\n` +
+          `Não encontrei artigos recentes sobre ${med} no PubMed.\n\n` +
           'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾\n\n' +
-          'Deseja que eu verifique **preço e estoque** desse medicamento no sistema local?'
+          'Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
       };
     }
 
@@ -135,19 +135,19 @@ export class BolotaAgent {
         ? `${a.abstract.slice(0, 300)}...`
         : a.abstract || 'Resumo não disponível.';
 
-    const reply = `
-Encontrei informações interessantes sobre **${med}**! 🧪🐾
-
-**• Título:** ${a.title}
-**• Revista:** ${a.journal || 'Não informado'}
-**• Autores:** ${a.authors?.join(', ') || 'Não informados'}
-**• Resumo:** ${summary}
-**• Link para leitura completa:** ${a.link}
-
-⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.
-
-Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
-    `.trim();
+    const reply = [
+      `Encontrei informações interessantes sobre ${med}! 🧪🐾`,
+      '',
+      `Título: ${a.title}`,
+      `Revista: ${a.journal || 'Não informado'}`,
+      `Autores: ${a.authors?.join(', ') || 'Não informados'}`,
+      `Resumo: ${summary}`,
+      `Link para leitura completa: ${a.link}`,
+      '',
+      '⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
+      '',
+      'Deseja ver preço e estoque desse medicamento no nosso sistema local?'
+    ].join('\n');
 
     return { reply };
   }
@@ -167,9 +167,9 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
     if (!articles.length) {
       return {
         reply:
-          `Não encontrei artigos recentes sobre **${med}** no PubMed.\n\n` +
+          `Não encontrei artigos recentes sobre ${med} no PubMed.\n\n` +
           'Mesmo assim, o uso de qualquer medicamento deve ser avaliado por um médico veterinário. 🩺🐾\n\n' +
-          'Deseja que eu verifique **preço e estoque** desse medicamento no sistema local?'
+          'Deseja que eu verifique preço e estoque desse medicamento no sistema local?'
       };
     }
 
@@ -180,19 +180,19 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
         ? `${a.abstract.slice(0, 300)}...`
         : a.abstract || 'Resumo não disponível.';
 
-    const reply = `
-Encontrei informações interessantes sobre **${med}**! 🧪🐾
-
-**• Título:** ${a.title}
-**• Revista:** ${a.journal || 'Não informado'}
-**• Autores:** ${a.authors?.join(', ') || 'Não informados'}
-**• Resumo:** ${summary}
-**• Link para leitura completa:** ${a.link}
-
-⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.
-
-Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
-    `.trim();
+    const reply = [
+      `Encontrei informações interessantes sobre ${med}! 🧪🐾`,
+      '',
+      `Título: ${a.title}`,
+      `Revista: ${a.journal || 'Não informado'}`,
+      `Autores: ${a.authors?.join(', ') || 'Não informados'}`,
+      `Resumo: ${summary}`,
+      `Link para leitura completa: ${a.link}`,
+      '',
+      '⚠️ Lembre-se: qualquer uso de medicamentos em animais deve ser orientado por um médico veterinário.',
+      '',
+      'Deseja ver preço e estoque desse medicamento no nosso sistema local?'
+    ].join('\n');
 
     return { reply };
   }
@@ -224,25 +224,23 @@ Deseja ver **preço e estoque** desse medicamento no nosso sistema local?
 
     if (item.stock === 0) {
       return {
-        reply: `
-O medicamento **${item.description}** está cadastrado no sistema, mas atualmente está **fora de estoque**. ❌
-
-⚠️ Uso somente com prescrição veterinária. Fale com o médico veterinário sobre opções e disponibilidade.
-        `.trim()
+        reply:
+          `O medicamento ${item.description} está cadastrado no sistema, mas atualmente está sem estoque. ❌\n\n` +
+          '⚠️ Uso somente com prescrição veterinária. Fale com o médico veterinário sobre opções e disponibilidade.'
       };
     }
 
-    return {
-      reply: `
-Aqui está o que encontrei sobre **${item.description}**:
+    const reply = [
+      `Aqui está o que encontrei sobre ${item.description}:`,
+      '',
+      `Preço: R$ ${item.price.toFixed(2)}`,
+      `Estoque disponível: ${item.stock} unidade(s)`,
+      `Status: ${item.status === 'available' ? 'disponível' : 'indisponível'}`,
+      '',
+      '⚠️ Lembre-se: este medicamento deve ser utilizado somente com prescrição veterinária.'
+    ].join('\n');
 
-💵 **Preço:** R$ ${item.price.toFixed(2)}
-📦 **Estoque disponível:** ${item.stock} unidade(s)
-📊 **Status:** ${item.status === 'available' ? 'disponível' : 'indisponível'}
-
-⚠️ Lembre-se: este medicamento deve ser utilizado **somente com prescrição veterinária**.
-      `.trim()
-    };
+    return { reply };
   }
 }
 
