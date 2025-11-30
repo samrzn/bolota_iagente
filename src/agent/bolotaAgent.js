@@ -2,6 +2,27 @@ import intentDetector from './intentDetector.js';
 import stateManager from './stateManager.js';
 import toolsRegistry from './toolsRegistry.js';
 
+const GENERIC_INFO_TOKENS = new Set([
+  'me',
+  'fale',
+  'falar',
+  'sobre',
+  'sabe',
+  'informacao',
+  'informações',
+  'informacoes',
+  'informação',
+  'para',
+  'que',
+  'serve',
+  'indicacoes',
+  'indicações',
+  'de',
+  'do',
+  'da',
+  'uso'
+]);
+
 export class BolotaAgent {
   async handle(sessionId, message) {
     const intent = intentDetector.detect(message);
@@ -58,9 +79,27 @@ export class BolotaAgent {
     };
   }
 
+  _getImportantTokens(message = '') {
+    const lower = message.toLowerCase();
+
+    const tokens = lower
+      .replaceAll(/[^\wÀ-ÿ\s]/g, ' ')
+      .replaceAll(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .filter(Boolean);
+
+    return tokens.filter((t) => !GENERIC_INFO_TOKENS.has(t));
+  }
+
   _extractMedicationFromQuestion(message = '') {
     const original = message;
     const lower = original.toLowerCase();
+
+    const importantTokens = this._getImportantTokens(message);
+    if (!importantTokens.length) {
+      return null;
+    }
 
     const patterns = [
       /sobre\s+(.+)/i,
@@ -140,6 +179,12 @@ export class BolotaAgent {
   }
 
   async _handleMedicineNameOnly(sessionId, message) {
+    const importantTokens = this._getImportantTokens(message);
+
+    if (!importantTokens.length) {
+      return this._handleAskForMedName();
+    }
+
     const med = message.trim();
 
     stateManager.setLastMedication(sessionId, med);
