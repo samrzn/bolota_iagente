@@ -1,202 +1,149 @@
 import axios from 'axios';
+import { XMLParser } from 'fast-xml-parser';
 import loggerHelper from '../../../infra/logger.js';
 
-const PUBMED_BASE_URL = process.env.PUBMED_URL;
-
 class PubMedService {
-  /**
-   * @param {import('axios').AxiosInstance | typeof axios} httpClient
-   */
-  constructor(httpClient = axios) {
-    this.http = httpClient;
+  constructor() {
+    this.client = axios.create({
+      baseURL: process.env.PUBMED_URL,
+      timeout: 10000
+    });
+
+    this.parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '',
+      textNodeName: 'text',
+      trimValues: true
+    });
   }
 
-  /**
-   * @param {string} query
-   * @param {number} maxResults
-   * @returns {Promise<Array>}
-   */
-  async searchArticles(query, maxResults = 5) {
+  async searchArticles(term, maxResults = 5) {
     loggerHelper.info('PubMedService.searchArticles called', {
-      query,
+      term,
       maxResults
     });
 
-    const trimmedQuery = (query || '').trim();
-
-    if (!trimmedQuery) {
-      loggerHelper.warn('PubMedService.searchArticles called with empty query');
-      return [];
-    }
-
     try {
-      const ids = await this.searchIds(trimmedQuery, maxResults);
+      const ids = await this.searchIds(term, maxResults);
 
-      if (!ids.length) {
-        loggerHelper.info('PubMedService.searchArticles: no IDs found', {
-          query: trimmedQuery
+      if (!ids?.length) {
+        loggerHelper.info('PubMedService.searchArticles no IDs found', {
+          term
         });
         return [];
       }
 
       const articles = await this.fetchDetails(ids);
+
       loggerHelper.info('PubMedService.searchArticles success', {
-        query: trimmedQuery,
+        term,
         count: articles.length
       });
 
       return articles;
-    } catch (error) {
-      loggerHelper.error('Erro ao buscar artigos no PubMed', {
-        message: error.message,
-        isAxiosError: !!error.isAxiosError,
-        stack: error.stack
+    } catch (err) {
+      loggerHelper.error('Erro no searchArticles', {
+        term,
+        error: err?.message
       });
-      return [];
+
+      throw err;
     }
   }
 
-  /**
-   * @private
-   * @param {string} query
-   * @param {number} maxResults
-   * @returns {Promise<string[]>}
-   */
-  async searchIds(query, maxResults) {
-    loggerHelper.info('PubMedService.searchIds called', { query, maxResults });
+  async searchIds(term, maxResults) {
+    loggerHelper.info('PubMedService.searchIds called', { term, maxResults });
 
-    const params = {
-      db: 'pubmed',
-      term: query,
-      retmode: 'json',
-      retmax: maxResults,
-      sort: 'pub+date'
-    };
-
-    const response = await this.http.get(`${PUBMED_BASE_URL}/esearch.fcgi`, {
-      params
-    });
-
-    const idList =
-      response?.data?.esearchresult?.idlist &&
-      Array.isArray(response.data.esearchresult.idlist)
-        ? response.data.esearchresult.idlist
-        : [];
-
-    const ids = idList
-      .map((id) => String(id || '').trim())
-      .filter((id) => id.length > 0);
-
-    loggerHelper.info('PubMedService.searchIds success', {
-      query,
-      found: ids.length
-    });
-
-    return ids;
-  }
-
-  /**
-   * @private
-   * @param {string[]|string} idList
-   * @returns {Promise<Array>}
-   */
-  async fetchDetails(idList) {
-    const idsArray = Array.isArray(idList) ? idList : [idList];
-
-    const pmids = idsArray
-      .map((id) => String(id || '').trim())
-      .filter((id) => id.length > 0);
-
-    if (!pmids.length) {
-      loggerHelper.warn('PubMedService.fetchDetails called with empty idList');
-      return [];
-    }
-
-    loggerHelper.info('PubMedService.fetchDetails called', { pmids });
-
-    const params = {
-      db: 'pubmed',
-      id: pmids.join(','),
-      retmode: 'json',
-      version: '2.0'
-    };
-
-    const response = await this.http.get(`${PUBMED_BASE_URL}/esummary.fcgi`, {
-      params
-    });
-
-    const result = response?.data?.result;
-
-    if (!result || !Array.isArray(result.uids)) {
-      loggerHelper.warn(
-        'PubMedService.fetchDetails: unexpected response structure',
-        {
-          hasResult: !!result
+    try {
+      const response = await this.client.get('/esearch.fcgi', {
+        params: {
+          db: 'pubmed',
+          term,
+          retmode: 'xml',
+          retmax: maxResults
         }
-      );
-      return [];
+      });
+
+      const json = this.parser.parse(response.data);
+      const idList = json?.eSearchResult?.IdList?.Id || [];
+
+      const ids = Array.isArray(idList) ? idList : [idList].filter(Boolean);
+
+      loggerHelper.info('PubMedService.searchIds success', {
+        term,
+        idsCount: ids.length
+      });
+
+      return ids;
+    } catch (err) {
+      loggerHelper.error('Erro ao buscar IDs no PubMed', {
+        term,
+        status: err?.response?.status,
+        url: err?.config?.url,
+        error: err?.message
+      });
+
+      throw err;
     }
-
-    const articles = result.uids
-      .map((uid) => this._mapSummaryToArticle(uid, result[uid]))
-      .filter(Boolean);
-
-    loggerHelper.info('PubMedService.fetchDetails success', {
-      requested: pmids.length,
-      returned: articles.length
-    });
-
-    return articles;
   }
 
-  /**
-   * @private
-   * @param {string} uid
-   * @param {any} item
-   * @returns {{
-   *  pmid: string,
-   *  title: string,
-   *  journal: string,
-   *  year: string,
-   *  authors: string[],
-   *  summary: string,
-   *  link: string
-   * } | null}
-   */
-  _mapSummaryToArticle(uid, item) {
-    if (!item) return null;
+  async fetchDetails(idList) {
+    loggerHelper.info('PubMedService.fetchDetails called', {
+      idsCount: idList.length
+    });
 
-    const pmid = String(uid || '').trim();
-    const title = (item.title || '').trim() || 'Título não disponível';
-    const journal =
-      (item.fulljournalname || item.source || '').trim() ||
-      'Revista não informada';
+    try {
+      const response = await this.client.get('/efetch.fcgi', {
+        params: {
+          db: 'pubmed',
+          id: idList.join(','),
+          retmode: 'xml',
+          rettype: 'abstract'
+        }
+      });
 
-    let year = '';
-    const pubdate = (item.pubdate || item.epubdate || '').trim();
-    if (pubdate && /^\d{4}/.test(pubdate)) {
-      year = pubdate.slice(0, 4);
-    } else {
-      year = 'N/A';
+      const json = this.parser.parse(response.data);
+      const node = json?.PubmedArticleSet?.PubmedArticle || [];
+      const articles = Array.isArray(node) ? node : [node].filter(Boolean);
+
+      const mapped = articles.map((raw) => this.mapArticle(raw));
+
+      loggerHelper.info('PubMedService.fetchDetails success', {
+        count: mapped.length
+      });
+
+      return mapped;
+    } catch (err) {
+      loggerHelper.error('Erro ao buscar detalhes no PubMed', {
+        status: err?.response?.status,
+        url: err?.config?.url,
+        error: err?.message
+      });
+
+      throw err;
     }
+  }
 
-    const authors =
-      Array.isArray(item.authors) && item.authors.length
-        ? item.authors
-            .map((a) => (a && a.name ? String(a.name).trim() : ''))
-            .filter((name) => name.length > 0)
-        : [];
+  mapArticle(article) {
+    const medline = article?.MedlineCitation;
+    const articleData = medline?.Article;
 
-    const summaryCandidate = (item.summary || item.elocationid || '')
-      .toString()
-      .trim();
+    const pmidNode = medline?.PMID;
+    const pmid = typeof pmidNode === 'object' ? pmidNode.text : pmidNode;
 
-    const summary =
-      summaryCandidate && summaryCandidate.length > 0
-        ? summaryCandidate
-        : 'Resumo não disponível neste registro do PubMed.';
+    const title = articleData?.ArticleTitle || '';
+    const journal = articleData?.Journal?.Title || '';
 
-    const link = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+    const year =
+      articleData?.Journal?.JournalIssue?.PubDate?.Year ||
+      articleData?.Journal?.JournalIssue?.PubDate?.MedlineDate ||
+      '';
+
+    const authorsRaw = articleData?.AuthorList?.Author || [];
+    const authors = this.extractAuthors(authorsRaw);
+
+    const abstractText = this.extractAbstract(articleData?.Abstract);
+    const summary = this.buildSummary(abstractText, medline);
 
     return {
       pmid,
@@ -205,12 +152,61 @@ class PubMedService {
       year,
       authors,
       summary,
-      link
+      link: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : undefined
     };
+  }
+
+  extractAuthors(authorsRaw) {
+    const list = Array.isArray(authorsRaw)
+      ? authorsRaw
+      : [authorsRaw].filter(Boolean);
+
+    return list
+      .map((a) => {
+        if (a?.LastName && a?.Initials) {
+          return `${a.LastName} ${a.Initials}`;
+        }
+        if (a?.CollectiveName) {
+          return a.CollectiveName;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  extractAbstract(abstractNode) {
+    if (!abstractNode) return '';
+
+    const raw = abstractNode.AbstractText ?? abstractNode;
+
+    if (typeof raw === 'string') return raw;
+
+    const arr = Array.isArray(raw) ? raw : [raw];
+
+    return arr
+      .map((n) => (typeof n === 'string' ? n : n?.text || ''))
+      .join(' ')
+      .trim();
+  }
+
+  buildSummary(abstractText, medlineCitation) {
+    const clean = abstractText.replaceAll(/\s+/g, ' ').trim();
+
+    if (clean.length) {
+      return clean.length > 300 ? `${clean.slice(0, 297)}...` : clean;
+    }
+
+    const articleIds = medlineCitation?.ArticleIdList?.ArticleId || [];
+    const ids = Array.isArray(articleIds)
+      ? articleIds
+      : [articleIds].filter(Boolean);
+
+    const doi = ids.find((i) => i.IdType === 'doi')?.text;
+
+    if (doi) return `doi: ${doi}`;
+
+    return 'Resumo não disponível para este artigo.';
   }
 }
 
-const pubMedService = new PubMedService();
-
-export default pubMedService;
-export { PubMedService };
+export default new PubMedService();
