@@ -72,6 +72,22 @@ class PubMedService {
       return [];
     }
   }
+
+  async searchArticles(query, maxResults = 5) {
+    loggerHelper.info('PubMedService.searchArticles called', {
+      query,
+      maxResults
+    });
+
+    const ids = await this.searchIds(query, maxResults);
+
+    if (!ids.length) {
+      return [];
+    }
+
+    const articles = await this.fetchDetails(ids);
+    return articles;
+  }
 }
 
 const pubMedService = new PubMedService();
