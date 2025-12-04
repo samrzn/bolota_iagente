@@ -18,7 +18,32 @@ export class ToolsRegistry {
         params: { query }
       });
 
-      const items = response.data.items || [];
+      const rawItems = response.data.items || [];
+
+      const items = rawItems.map((item) => {
+        const abstractFromItem =
+          typeof item.abstract === 'string' && item.abstract.trim().length > 0
+            ? item.abstract
+            : null;
+
+        const summaryFromItem =
+          typeof item.summary === 'string' && item.summary.trim().length > 0
+            ? item.summary
+            : null;
+
+        let finalAbstract = '';
+
+        if (abstractFromItem) {
+          finalAbstract = abstractFromItem;
+        } else if (summaryFromItem) {
+          finalAbstract = summaryFromItem;
+        }
+
+        return {
+          ...item,
+          abstract: finalAbstract
+        };
+      });
 
       loggerHelper.info('ToolsRegistry.findArticles success', {
         query,

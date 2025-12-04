@@ -70,8 +70,11 @@ export class BolotaAgent {
         break;
 
       case 'CHECK_AVAILABILITY':
-      case 'CONFIRM':
         payload = await this._handleAvailability(sessionId, message);
+        break;
+
+      case 'CONFIRM':
+        payload = await this._handleAvailability(sessionId);
         break;
 
       default:
